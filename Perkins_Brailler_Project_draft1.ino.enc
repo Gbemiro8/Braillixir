@@ -1,0 +1,215 @@
+///*Date created:: 21 - 07 - 2019
+
+/*Update:: Ongoing
+*Authors and contributors::
+  Oluwagbemiro Peculiar
+  Raji Olaoluwa
+  Akinlade Joseph
+  Orioke John
+  
+
+*/
+
+#include <Bounce2.h>
+#include <string.h>
+#include <ctype.h>
+#include <LiquidCrystal.h>
+#define NUM  7 //number of buttons
+
+LiquidCrystal lcd(1, 2, 4, 5, 6, 7); 
+struct BUTTON{
+  int pin;
+  int braille = 0;
+  Bounce button;
+} Button[NUM]; //an array of structures for buttons
+
+int brailleSum = 0;
+char charCombo[NUM + 1]; //for braille digits with the same sum
+char eachChar;
+
+int BrailleSum(void){
+  int addBraille = 0;
+  for (int i = 0; i < 7; i++){
+    addBraille += Button[i].braille;
+  }
+  return addBraille;
+}
+void AssignBraille(void){
+  int j = 0;
+   //Assigning a braille number to a pressed button except space key
+    while (j < 3){
+      if (Button[j].button.rose())
+      {
+        Button[j].braille = j + 1;
+      }
+      j++;
+    }
+    charCombo[j] = '0'; //Make Space button neutral
+    j++; //make j = 4;
+    while (j < 7){
+      if (Button[j].button.rose())
+      {
+      Button[j].braille = j;
+      }
+      j++;
+    }
+}
+
+void ResetBraille(void){
+  //Resets all braille numbers to 0 as well as the braille sum
+  for (int i = 0; i < 7; i++){
+    Button[i].braille = 0;
+  }
+  brailleSum = 0;
+}
+
+void DisplayChar(void){
+  //Displays the character equivalent of the braille number
+    //If space key is pressed, display characters
+    switch (brailleSum){
+      case 1: //digit 1 = a
+        lcd.print('a');
+        break;
+  
+      case 3: //digits 1 & 2 = b
+        lcd.print('b');
+        break;
+
+      case 4: //digits 1 & 3
+        lcd.print('k');
+        break;
+      
+      case 5: //digits 1 & 4 = c
+        lcd.print('c');
+        break;
+
+      case 6:
+        if (!strcmp(charCombo,"1000050")){
+          lcd.print('e');
+        }
+        else if (!strcmp(charCombo,"0200400")){
+          lcd.print('i');
+        }
+        else if (!strcmp(charCombo,"1230000")){
+          lcd.print('l');
+        }
+      break;
+
+      case 7: //digits 1 & 2 & 4
+        lcd.print('f');
+        break;
+
+      case 8:
+        if (!strcmp(charCombo,"1200050")){
+          lcd.print('h');
+        }
+        else if (!strcmp(charCombo,"1030400")){
+          lcd.print('m');
+        }
+        break;
+
+      case 9:
+        if (!strcmp(charCombo,"1030050")){
+          lcd.print('o');
+        }
+        else if (!strcmp(charCombo,"0230400")){
+          lcd.print('s');
+        }  
+      break;
+      
+      case 10:
+        if (!strcmp(charCombo,"1000450")){
+          lcd.print('d');
+        }
+        else if (!strcmp(charCombo,"1230400")){
+          lcd.print('p');
+        }
+        else if (!strcmp(charCombo,"1030006")){
+          lcd.print('u');
+        }
+      break;
+
+    case 11:
+      if(!strcmp(charCombo,"0200450")){
+        lcd.print('j');
+      }
+      else if (!strcmp(charCombo,"1230050")){
+        lcd.print('r');
+      }
+    break;
+      
+    case 12:
+      if (!strcmp(charCombo,"1200450")){
+        lcd.print('g');
+      }
+      else if (!strcmp(charCombo,"1230006")){
+        lcd.print('v');
+      }
+    break;
+    
+    case 13: //digits 1 & 3 & 4 & 5
+      lcd.print('n');
+      break;
+
+    case 14: //digits 2 & 3 & 4 & 5
+      if (!strcmp(charCombo,"0230450")){
+        lcd.print('t');
+      }
+      else if (!strcmp(charCombo,"1030406")){
+        lcd.print('x');
+      }
+    break;
+    
+    case 15: //digits 1 & 2 & 3 & 4 & 5
+      if (!strcmp(charCombo,"1230450")){
+        lcd.print('q');
+      }
+      else if (!strcmp(charCombo,"1030056")){
+        lcd.print('z');
+      }
+    break;
+
+    case 17: //digits 2 & 4 & 5 & 6
+      lcd.print('w');
+      break;
+
+    case 19: //digits 1 & 3 & 4 & 5 & 6
+      lcd.print('y');
+      break;
+   }
+}
+void setup() 
+{ 
+    int i;
+    lcd.begin(16,2);
+    //Assigning the pins 8 - 13, 3
+    for (i = 0; i < 6; i++){
+      Button[i].pin = i + 8;
+    } 
+    Button[i].pin = 3;
+    
+    //Debounce configuration for the buttons
+    for (int k = 0; k < 7; k++){
+      Button[k].button.attach(Button[k].pin,INPUT);
+    }
+} 
+ 
+void loop() 
+{  
+  // Update the state of the debounced button.
+  for (int i = 0; i < 7; i++){
+    Button[i].button.update();
+  }
+  AssignBraille();
+  brailleSum = BrailleSum();
+
+  for(int k = 0; k < 7; k++){
+    eachChar = Button[k].braille + '0';
+    charCombo[k] = eachChar;
+  } 
+  
+  if (Button[3].button.rose()){ //Display characters after space key is pressed
+    DisplayChar();
+    ResetBraille();
+  }
+}  
